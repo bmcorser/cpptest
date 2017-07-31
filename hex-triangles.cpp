@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <iostream>
+#include <algorithm>
 #include <iomanip>
 
 using namespace std;
@@ -15,11 +16,40 @@ int centered_hexagonal_number(int n) {
     return 1 + 6 * triangular_number(n);
 }
 
+void set_push_back(vector<unsigned> &dest, unsigned value) {
+    if (find(dest.begin(), dest.end(), value) == dest.end()) {
+        dest.push_back(value);
+    }
+}
+
+void contribute_edge_pair(vector<unsigned> &dest, unsigned left, unsigned right) {
+    bool needs_left = find(dest.begin(), dest.end(), left) == dest.end();
+    bool needs_right = find(dest.begin(), dest.end(), right) == dest.end();
+    if (needs_left && needs_right) {
+        dest.push_back(left);
+        dest.push_back(right);
+    }
+}
+
+void contribute_to_normal_index(map< unsigned, vector<unsigned> > &normal_index, unsigned a, unsigned b, unsigned c) {
+    set_push_back(normal_index[a], b);
+    set_push_back(normal_index[a], c);
+    set_push_back(normal_index[b], a);
+    set_push_back(normal_index[b], c);
+    set_push_back(normal_index[c], a);
+    set_push_back(normal_index[c], b);
+    /*
+    contribute_edge_pair(normal_index[c], a, b);
+    contribute_edge_pair(normal_index[a], b, c);
+    contribute_edge_pair(normal_index[b], a, c);
+    */
+}
 
 int main() {
     unsigned n = 3;
     vector<unsigned> ring[n];
     vector< array<unsigned, 3> > triangles;
+    map< unsigned, vector<unsigned> > normal_index;
 
     // populate ring indices
     ring[0].push_back(0); // initial condition
@@ -39,61 +69,78 @@ int main() {
         }
         cout << "\n";
     }
+    cout << "\n";
     /*
         * i = side length
         * k = triangle start index
         * j = side
     */
     for (unsigned side_length = 1; side_length < n; ++side_length) { // ring
+        cout << "ring side index edge inner\n";
         for (unsigned side = 0; side < 6; ++side) { // side
-            cout << "--\n";
-            for (unsigned triangle_start = 0; triangle_start < side_length; ++triangle_start) { // boundary vertex
-                unsigned side_increment = side * side_length;
-                unsigned side_increment_inner = side * (side_length - 1);
+            for (unsigned side_index = 0; side_index < side_length; ++side_index) { // boundary vertex
+                unsigned edge = side * side_length + side_index;
+                unsigned edge_inner = side * (side_length - 1) + side_index;
+
+                cout << side_length << setfill(' ') << setw(5);
+                cout << side << setfill(' ') << setw(5);
+                cout << side_index << setfill(' ') << setw(6);
+                cout << edge << setfill(' ') << setw(5);
+                cout << edge_inner << setfill(' ') << setw(6);
+
                 /*
-                    *  a ___ b
-                    *   \   /
-                    *    \ /
-                    *     c
-                    *
-                    */
-                unsigned a = ring[side_length][side_increment + triangle_start];
+                 *  a ___ b
+                 *   \   /
+                 *    \ /
+                 *     c
+                 *
+                 */
+                unsigned a = ring[side_length][edge];
                 unsigned b, c;
-                if (side_increment + triangle_start + 1 == ring[side_length].size()) {
-                    cout << triangle_start << ": ";
-                    b = ring[side_length][triangle_start];
-                    c = ring[side_length - 1][triangle_start];
+                if (edge + 1 == ring[side_length].size()) {
+                    b = ring[side_length][0];
+                    c = ring[side_length - 1][0];
                 } else {
-                    b = ring[side_length][side_increment + triangle_start + 1];
-                    c = ring[side_length - 1][side_increment_inner + triangle_start];
+                    b = ring[side_length][edge + 1];
+                    c = ring[side_length - 1][edge_inner];
                 }
-                cout << a << " " << b << " " << c << " \\/\n";
+                contribute_to_normal_index(normal_index, a, b, c);
+                cout << setfill(' ') << setw(6) << a << setw(3) << b << setw(3) << c << setw(3) << " \\/\n";
                 array<unsigned, 3> triangle = {a, b, c};
                 triangles.push_back(triangle);
-                if ((triangle_start + 1) % 2 == 0) {
+                if ((edge + 1) % 2 == 0 && side_length > 1) {
+
                     /*
-                    *     b'
-                    *    / \
-                    *   /___\
-                    *  c'    d
-                    *
-                    */
-                    unsigned b_ = ring[side_length][side_increment + triangle_start];
+                     *     b'
+                     *    / \
+                     *   /___\
+                     *  c'    d
+                     *
+                     */
+                    unsigned b_ = ring[side_length][edge];
                     unsigned d;
-                    if (side_increment_inner + triangle_start == ring[side_length - 1].size()) {
-                        cout << triangle_start << ": ";
-                        d = ring[side_length - 1][triangle_start];
+                    if (edge_inner < ring[side_length - 1].size()) {
+                        d = ring[side_length - 1][edge_inner];
                     } else {
-                        d = ring[side_length - 1][side_increment_inner + triangle_start];
+                        d = ring[side_length - 1][0];
                     }
-                    unsigned c_ = ring[side_length - 1][side_increment_inner + triangle_start - 1];
-                    cout << b_ << " " << d << " " << c_ << " /\\\n";
+                    unsigned c_ = ring[side_length - 1][edge_inner - 1];
+                    contribute_to_normal_index(normal_index, c_, b_, d);
+                    cout << setfill(' ') << setw(28) << b_ << setw(3) << d << setw(3) << c_ << setw(3) << " /\\\n";
                     array<unsigned, 3> triangle = {b_, d, c_};
                     triangles.push_back(triangle);
                 }
-
             }
-            }
-            cout << "==\n";
+        }
+        cout << "\n";
     }
+    for (unsigned i = 0; i < normal_index.size(); ++i) {
+        cout << i  << setfill(' ') << setw(2)<< ": "<<setw(2) ;
+        for (unsigned j = 0; j < normal_index[i].size(); ++j) {
+            cout << normal_index[i][j] << setfill(' ') << setw(2) << " ";
+        }
+        cout << "\n";
+    }
+    /*
+    */
 }
