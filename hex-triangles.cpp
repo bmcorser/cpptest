@@ -6,40 +6,12 @@
 #include <algorithm>
 #include <iomanip>
 
+#include "OrderedSetCycle.cpp"
+
 using namespace std;
 
 typedef map< unsigned, vector<unsigned> > NormalIndex;
 typedef vector< array<unsigned, 3> > TriangleList;
-class OrderedSetCycle
-{
-public:
-    OrderedSetCycle() { }
-    ~OrderedSetCycle() { }
-    void push_back(unsigned value) {
-        if (find(vec.begin(), vec.end(), value) == vec.end()) {
-            return vec.push_back(value);
-        }
-    }
-    unsigned size() { return vec.size(); }
-    unsigned operator[](int index) {
-        unsigned end = vec.size();
-        if (index < end) {
-            if (index < 0) {
-               if (abs(index) < end) {
-                    return vec[end + index];
-               } else {
-                    return vec[end + (index % end)];
-               }
-            } else {
-                return vec[index];
-            }
-        } else {
-            return vec[index % end];
-        }
-    }
-private:
-    vector<unsigned> vec;
-};
 
 int triangular_number(int n) {
     return (n * (n  + 1)) / 2;
