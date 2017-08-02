@@ -19,6 +19,17 @@ int centered_hexagonal_number(int n) {
     return 1 + 6 * triangular_number(n);
 }
 
+void add_rightmost_triangles(vector< array<unsigned, 3> > &triangles, unsigned v,unsigned a, unsigned b, unsigned c, unsigned d, unsigned e) {
+    array<unsigned, 3> one = {v, a, b};
+    triangles.push_back(one);
+    array<unsigned, 3> two = {v, b, c};
+    triangles.push_back(two);
+    array<unsigned, 3> three = {v, c, d};
+    triangles.push_back(three);
+    array<unsigned, 3> four = {v, d, e};
+    triangles.push_back(four);
+}
+
 int main() {
     unsigned n = 4;
     OrderedSetCycle ring[n];
@@ -44,59 +55,7 @@ int main() {
         }
         cout << "\n";
     }
-    cout << "\n";
-        * i = side length
-        * k = triangle start index
-        * j = side
     */
-    for (unsigned side_length = 1; side_length < n; ++side_length) { // ring
-        // cout << "ring side index edge inner\n";
-        for (unsigned side = 0; side < 6; ++side) { // side
-            for (unsigned side_index = 0; side_index < side_length; ++side_index) { // boundary vertex
-                unsigned edge = side * side_length + side_index;
-                unsigned edge_inner = side * (side_length - 1) + side_index;
-
-                /*
-                cout << side_length << setfill(' ') << setw(5);
-                cout << side << setfill(' ') << setw(5);
-                cout << side_index << setfill(' ') << setw(6);
-                cout << edge << setfill(' ') << setw(5);
-                cout << edge_inner << setfill(' ') << setw(6);
-                */
-
-                /*
-                 *  a ___ b
-                 *   \   /
-                 *    \ /
-                 *     c
-                 *
-                 */
-                unsigned a = ring[side_length][edge];
-                unsigned b = ring[side_length][edge + 1];
-                unsigned c = ring[side_length - 1][edge_inner];
-                // contribute_to_normal_index(normal_index, a, b, c);
-                // cout << setfill(' ') << setw(6) << a << setw(3) << b << setw(3) << c << setw(3) << " \\/\n";
-                array<unsigned, 3> triangle = {a, b, c};
-                triangles.push_back(triangle);
-                if ((edge + 1) % 2 == 0 && side_length > 1) {
-
-                    /*
-                     *     b'
-                     *    / \
-                     *   /___\
-                     *  c'    d
-                     *
-                     */
-                    unsigned d = ring[side_length - 1][edge_inner];
-                    // contribute_to_normal_index(normal_index, c, b, d);
-                    // cout << setfill(' ') << setw(28) << b << setw(3) << d << setw(3) << c << setw(3) << " /\\\n";
-                    array<unsigned, 3> triangle = {b, d, c};
-                    triangles.push_back(triangle);
-                }
-            }
-        }
-        // cout << "\n";
-    }
     NormalIndex boundary_neighbours;
     unsigned boundary_ring = n - 1;
     for (unsigned side = 0; side < 6; ++side) { // side
@@ -105,29 +64,31 @@ int main() {
             unsigned vertex_inner = side * (boundary_ring - 1) + side_index;
             if (side_index == 0) { // corner
                 /*
-                 *     v ---- a
+                 *    (v)---- a
                  *    / \
                  *   /   \
                  *  c     b
                  *
                  */
+                unsigned v = ring[boundary_ring][vertex];
                 unsigned a = ring[boundary_ring][vertex + 1];
                 unsigned b = ring[boundary_ring - 1][vertex_inner];
                 unsigned c = ring[boundary_ring][vertex - 1];
-                boundary_neighbours[ring[boundary_ring][vertex]].push_back(a, b, c);
+                boundary_neighbours[v].push_back(a, b, c);
             } else {
                 /*
-                 *  d ---- v ---- a
+                 *  d ----(v)---- a
                  *        / \
                  *       /   \
                  *      c     b
                  *
                  */
+                unsigned v = ring[boundary_ring][vertex];
                 unsigned a = ring[boundary_ring][vertex + 1];
                 unsigned b = ring[boundary_ring - 1][vertex_inner];
                 unsigned c = ring[boundary_ring - 1][vertex_inner - 1];
                 unsigned d = ring[boundary_ring][vertex - 1];
-                boundary_neighbours[ring[boundary_ring][vertex]].push_back(a, b, c, d);
+                boundary_neighbours[v].push_back(a, b, c, d);
             }
         }
     }
@@ -139,6 +100,8 @@ int main() {
                 unsigned vertex = side * side_length + side_index;
                 unsigned vertex_inner = side * (side_length - 1) + side_index;
                 unsigned vertex_outer = side * (side_length + 1) + side_index;
+                unsigned v = ring[side_length][vertex];
+                unsigned a, b, c, d, e, f;
                 if (vertex % side_length == 0) {
                     /*
                      * interior corner
@@ -146,20 +109,20 @@ int main() {
                      *      e-----f
                      *             \
                      *              \
-                     *  d ----(*)    a
+                     *  d ----(v)    a
                      *          \
                      *           \
                      *      c     b
                      *
                      */
-                    unsigned a = ring[side_length + 1][vertex_outer + 1];
-                    unsigned b = ring[side_length][vertex + 1];
-                    unsigned c = ring[side_length - 1][vertex_inner];
-                    unsigned d = ring[side_length][vertex - 1];
-                    unsigned e = ring[side_length + 1][vertex_outer - 1];
-                    unsigned f = ring[side_length + 1][vertex_outer];
-                    cout << "interior corner " << ring[side_length][vertex] << ": " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "\n";
-                    neighbours[ring[side_length][vertex]].push_back(a, b, c, d, e, f);
+                    a = ring[side_length + 1][vertex_outer + 1];
+                    b = ring[side_length][vertex + 1];
+                    c = ring[side_length - 1][vertex_inner];
+                    d = ring[side_length][vertex - 1];
+                    e = ring[side_length + 1][vertex_outer - 1];
+                    f = ring[side_length + 1][vertex_outer];
+                    // cout << "interior corner " << ring[side_length][vertex] << ": " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "\n";
+                    neighbours[v].push_back(a, b, c, d, e, f);
                 } else {
                     /*
                      * interior boundary
@@ -167,23 +130,25 @@ int main() {
                      *      e-----f
                      *
                      *
-                     *  d ----(*)---- a
+                     *  d ----(v)---- a
                      *
                      *
                      *      c-----b
                      *
                      */
-                    unsigned a = ring[side_length][vertex + 1];
-                    unsigned b = ring[side_length - 1][vertex_inner];
-                    unsigned c = ring[side_length - 1][vertex_inner - 1];
-                    unsigned d = ring[side_length][vertex - 1];
-                    unsigned e = ring[side_length + 1][vertex_outer];
-                    unsigned f = ring[side_length + 1][vertex_outer + 1];
-                    cout << "interior boundary " << ring[side_length][vertex] << ": " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "\n";
+                    a = ring[side_length][vertex + 1];
+                    b = ring[side_length - 1][vertex_inner];
+                    c = ring[side_length - 1][vertex_inner - 1];
+                    d = ring[side_length][vertex - 1];
+                    e = ring[side_length + 1][vertex_outer];
+                    f = ring[side_length + 1][vertex_outer + 1];
+                    // cout << "interior boundary " << ring[side_length][vertex] << ": " << a << " " << b << " " << c << " " << d << " " << e << " " << f << "\n";
                     neighbours[ring[side_length][vertex]].push_back(a, b, c, d, e, f);
                 }
+                // add four rightmost triangles
+                add_rightmost_triangles(triangles, v, e, f, a, b, c);
             }
-        }
+       }
         cout << "\n";
     }
     /*
@@ -194,11 +159,17 @@ int main() {
         }
         cout << "\n";
     }
-    */
     for (unsigned i = 0; i < neighbours.size(); ++i) {
         cout << i  << setfill(' ') << setw(2) << ": " <<setw(2) ;
         for (unsigned j = 0; j < neighbours[i].size(); ++j) {
             cout << neighbours[i][j] << setfill(' ') << setw(2) << " ";
+        }
+        cout << "\n";
+    }
+    */
+    for (unsigned i = 0; i < triangles.size(); ++i) {
+        for (unsigned j = 0; j < triangles[i].size(); ++j) {
+            cout << triangles[i][j] << setfill(' ') << setw(2) << " ";
         }
         cout << "\n";
     }
